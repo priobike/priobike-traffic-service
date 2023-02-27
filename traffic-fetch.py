@@ -1,6 +1,8 @@
 import json
 import requests
 import haversine
+import time
+import os
 
 # https://api.hamburg.de/datasets/v1/verkehrslage/api#/Data/features-verkehrslage
 
@@ -9,30 +11,25 @@ limit = 50  # how many datapoints should be fetched (ignored if bulk is true)
 api = "https://api.hamburg.de/datasets/v1/verkehrslage/collections/verkehrslage/items?limit=" + \
     str(limit) + "&offset=0&bulk=" + str(bulk) + "&f=json"
 
+datapoints = 0
 
 # calculates the distance between two points in meters
 def calculateDistance(lat1, lon1, lat2, lon2):
     return haversine.haversine((lat1, lon1), (lat2, lon2), unit="m")
 
 # calls the API and returns the raw JSON
-def getTrafficData():
+def fetchTrafficData():
     trafficData = requests.get(api)
 
     if trafficData.status_code == 200:
-        print("Successly fetched traffic data")
         return trafficData.json()
     else:
-        print("Error fetching traffic data from API, status code: " +
-              str(trafficData.status_code))
         return None
 
 # parses the raw JSON, calculates the length of each path and returns a dict with the id of a path and its length
 def evaulateJSON(trafficData):
-
-    # print(json.dumps(trafficData, indent=4))
-
     paths = {}
-    datapoints = 0
+    global datapoints
 
     for datapoint in trafficData["features"]:
         id = datapoint["id"]
@@ -42,8 +39,7 @@ def evaulateJSON(trafficData):
 
         # interate over all coordinates except the last one
         for i in range(len(coords)-1):
-            lengthPath += calculateDistance(coords[i][0],
-                                            coords[i][1], coords[i+1][0], coords[i+1][1])
+            lengthPath += calculateDistance(coords[i][0],coords[i][1], coords[i+1][0], coords[i+1][1])
 
         trafficStatus = datapoint["properties"]["zustandsklasse"]
 
@@ -60,19 +56,15 @@ def evaulateJSON(trafficData):
             case _:
                 weight = 0
 
-        paths.update(
-            {id: {"lengthPath": lengthPath, "trafficStatus": trafficStatus, "weight": weight, "score": 0}})
-    print("Number Datapoints: " + str(datapoints))
+        paths.update({id: {"lengthPath": lengthPath, "trafficStatus": trafficStatus, "weight": weight, "score": 0}})
     return paths
 
 
 # converts the absolute length of each path to a relative value based on the total length of all paths between 0 and 1
-def convertAbsolutePathlengthToRelative(paths):
+def convertAbsolutePathLengthToRelative(paths):
     totalLength = 0
     for path in paths:
         totalLength += paths[path]["lengthPath"]
-    print("Total length of all paths: " + str(totalLength) +
-          "m " + str(round(totalLength/1000, 2)) + "km")
 
     for path in paths:
         paths[path]["lengthPath"] = paths[path]["lengthPath"]/totalLength
@@ -83,30 +75,42 @@ def calculateScore(paths):
     for path in paths:
         paths[path]["score"] = paths[path]["lengthPath"] * paths[path]["weight"]
 
+# writes the data to a json file
+def writeFile(paths):
+    sum_score = 0
+    for path in paths:
+        sum_score += paths[path]["score"]
+
+    date = time.strftime("%d.%m.%Y", time.localtime())
+    hour = time.strftime("%H:%M", time.localtime())
+
+    timestamp = time.time()
+
+    # save data to json file
+    with open("history/" + str(date) + " " + str(hour) + ".json", "w") as outfile:
+        write = {"score": sum_score, "timestamp": timestamp, "datapoints": datapoints}
+        json.dump(write, outfile, indent=4)
+
 
 def main():
+    # create folder for data if it doesn't exist
+    if not os.path.exists("history"):
+        os.makedirs("history")
+
     # fetch traffic data from API
-    trafficData = getTrafficData()
+    trafficData = fetchTrafficData()
 
     # if no data was fetched, exit
     if trafficData == None:
         return
 
-    # parse JSON and calculate absolute length of each path
     paths = evaulateJSON(trafficData)
 
-    # convert absolute length of each path to a relative value
-    convertAbsolutePathlengthToRelative(paths)
+    convertAbsolutePathLengthToRelative(paths)
 
-    # calculate score for each path by multiplying the relative length with the weight
     calculateScore(paths)
 
-    sum_score = 0
-    for path in paths:
-        # print("Path:" + str(path) + ", length: " + str(round(paths[path]["lengthPath"]*100, 4)) + " %, traffic: " + paths[path]["trafficStatus"] + ", score: " + str(round(paths[path]["score"], 4)))
-        sum_score += paths[path]["score"]
-    print("Sum of all scores: " + str(sum_score))
-
+    writeFile(paths)
 
 if __name__ == "__main__":
     main()
