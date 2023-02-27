@@ -14,20 +14,20 @@ api = "https://api.hamburg.de/datasets/v1/verkehrslage/collections/verkehrslage/
 datapoints = 0
 
 # calculates the distance between two points in meters
-def calculateDistance(lat1, lon1, lat2, lon2):
+def calculate_distance(lat1, lon1, lat2, lon2):
     return haversine.haversine((lat1, lon1), (lat2, lon2), unit="m")
 
 # calls the API and returns the raw JSON
-def fetchTrafficData():
-    trafficData = requests.get(api)
+def fetch_traffic_data():
+    traffic_data = requests.get(api)
 
-    if trafficData.status_code == 200:
-        return trafficData.json()
+    if traffic_data.status_code == 200:
+        return traffic_data.json()
     else:
         return None
 
 # parses the raw JSON, calculates the length of each path and returns a dict with the id of a path and its length
-def evaulateJSON(trafficData):
+def evaluate_JSON(trafficData):
     paths = {}
     global datapoints
 
@@ -35,16 +35,16 @@ def evaulateJSON(trafficData):
         id = datapoint["id"]
         coords = datapoint["geometry"]["coordinates"]
         datapoints += 1
-        lengthPath = 0
+        length_path = 0
 
         # interate over all coordinates except the last one
         for i in range(len(coords)-1):
-            lengthPath += calculateDistance(coords[i][0],coords[i][1], coords[i+1][0], coords[i+1][1])
+            length_path += calculate_distance(coords[i][0],coords[i][1], coords[i+1][0], coords[i+1][1])
 
-        trafficStatus = datapoint["properties"]["zustandsklasse"]
+        traffic_status = datapoint["properties"]["zustandsklasse"]
 
         # calculate weight based on traffic status
-        match trafficStatus:
+        match traffic_status:
             case "gestaut":
                 weight = 0
             case "zäh":
@@ -56,27 +56,27 @@ def evaulateJSON(trafficData):
             case _:
                 weight = 0
 
-        paths.update({id: {"lengthPath": lengthPath, "trafficStatus": trafficStatus, "weight": weight, "score": 0}})
+        paths.update({id: {"lengthPath": length_path, "trafficStatus": traffic_status, "weight": weight, "score": 0}})
     return paths
 
 
 # converts the absolute length of each path to a relative value based on the total length of all paths between 0 and 1
-def convertAbsolutePathLengthToRelative(paths):
-    totalLength = 0
+def convert_absolute_pathlength_to_relative(paths):
+    total_length = 0
     for path in paths:
-        totalLength += paths[path]["lengthPath"]
+        total_length += paths[path]["lengthPath"]
 
     for path in paths:
-        paths[path]["lengthPath"] = paths[path]["lengthPath"]/totalLength
+        paths[path]["lengthPath"] = paths[path]["lengthPath"]/total_length
 
 
 # gives each path a score based on the relative length and the weight (traffic status)
-def calculateScore(paths):
+def calculate_score(paths):
     for path in paths:
         paths[path]["score"] = paths[path]["lengthPath"] * paths[path]["weight"]
 
 # writes the data to a json file
-def writeFile(paths):
+def write_file(paths):
     sum_score = 0
     for path in paths:
         sum_score += paths[path]["score"]
@@ -98,19 +98,19 @@ def main():
         os.makedirs("history")
 
     # fetch traffic data from API
-    trafficData = fetchTrafficData()
+    trafficData = fetch_traffic_data()
 
     # if no data was fetched, exit
     if trafficData == None:
         return
 
-    paths = evaulateJSON(trafficData)
+    paths = evaluate_JSON(trafficData)
 
-    convertAbsolutePathLengthToRelative(paths)
+    convert_absolute_pathlength_to_relative(paths)
 
-    calculateScore(paths)
+    calculate_score(paths)
 
-    writeFile(paths)
+    write_file(paths)
 
 if __name__ == "__main__":
     main()
