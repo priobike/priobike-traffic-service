@@ -16,8 +16,6 @@ def calculateDistance(lat1, lon1, lat2, lon2):
     return haversine.haversine((lat1, lon1), (lat2, lon2), unit="m")
 
 # calls the API and returns the raw JSON
-
-
 def getTrafficData():
     trafficData = requests.get(api)
 
@@ -30,8 +28,6 @@ def getTrafficData():
         return None
 
 # parses the raw JSON, calculates the length of each path and returns a dict with the id of a path and its length
-
-
 def evaulateJSON(trafficData):
 
     # print(json.dumps(trafficData, indent=4))
