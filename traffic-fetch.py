@@ -4,8 +4,7 @@ import haversine
 
 # https://api.hamburg.de/datasets/v1/verkehrslage/api#/Data/features-verkehrslage
 
-# if true, all datapoints will be fetched (ignores limit), if false only the limit
-bulk = True
+bulk = True # if true, all datapoints will be fetched (ignores limit), if false only the limit
 limit = 50  # how many datapoints should be fetched (ignored if bulk is true)
 api = "https://api.hamburg.de/datasets/v1/verkehrslage/collections/verkehrslage/items?limit=" + \
     str(limit) + "&offset=0&bulk=" + str(bulk) + "&f=json"
