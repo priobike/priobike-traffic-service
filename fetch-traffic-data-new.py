@@ -9,7 +9,11 @@ data_cars = {}
 data_bikes = {}
 
 
-def fetch_API(api_type):
+def fetch_api(api_type):
+    """
+    Fetch, filter and evaluate API data for the amount of cars or bikes recently counted in Hamburg.
+    """
+
     if api_type == "cars":
         api = "https://iot.hamburg.de/v1.1/Datastreams?$filter=properties/serviceName eq 'HH_STA_AutomatisierteVerkehrsmengenerfassung' and properties/layerName eq 'Anzahl_Kfz_Zaehlstelle_15-Min'&$expand=Observations($orderby=phenomenonTime desc;$top=1)"
     elif api_type == "bikes":
@@ -40,7 +44,7 @@ def fetch_API(api_type):
                 if amount == 0:
                     continue
 
-                # Skip data older than 2 hours for cars and one day for bikes
+                # Skip data older than 2 hours
                 time_check = time.mktime(
                     time.strptime(timestamp, "%Y-%m-%dT%H:%M:%S.%fZ"))
                 if 7200 < (time.time() - time_check):
@@ -88,10 +92,12 @@ def fetch_API(api_type):
 
 
 def main():
-    fetch_API("cars")
-    print("Cars fetched")
-    fetch_API("bikes")
-    print("Bikes fetched")
+    """
+    Write data to JSON history file after fetching it from the API.
+    """
+
+    fetch_api("cars")
+    fetch_api("bikes")
 
     # Create folder for data if it doesn't exist
     if not os.path.exists("history"):
@@ -102,7 +108,7 @@ def main():
 
     timestamp = int(time.time())
 
-    # save data to JSON history file
+    # Save data to JSON history file
     with open(f"history/{date}-{hour}.json", "w") as outfile:
         write = {
             "cars": total_cars,
