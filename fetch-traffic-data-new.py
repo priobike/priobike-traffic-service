@@ -11,6 +11,7 @@ def main():
     api = "https://iot.hamburg.de/v1.1/Datastreams?$filter=properties/serviceName eq 'HH_STA_AutomatisierteVerkehrsmengenerfassung' and properties/layerName eq 'Anzahl_Kfz_Zaehlstelle_15-Min'&$expand=Observations($orderby=phenomenonTime desc;$top=1)"
 
     data = {}
+    total_result = 0
 
     while api:
         # Fetch traffic data from API
@@ -18,9 +19,6 @@ def main():
         if traffic_data.status_code != 200:
             raise Exception("Error fetching traffic data")
         traffic_data = traffic_data.json()
-
-        # print json
-        # print(json.dumps(traffic_data, indent=4))
 
         for datapoint in traffic_data["value"]:
             try:
@@ -33,11 +31,26 @@ def main():
                 data.update({
                     "@iot.id": id,
                     "coordinates": coords,
-                    "result": result,
-                    "resultTime": result_time
+                    "totalCars": result,
+                    "share": 0,
+                    "time": result_time
                 })
+
+                total_result += result
+
+                # check if coords contain a list of coordinates
+                if isinstance(coords[0], list):
+                    print("List of coordinates")
+
             except:
                 continue
+
+        print("Total cars seen:", total_result)
+
+        # calculate share of cars
+        for datapoint in data:
+            data[datapoint][
+                "share"] = data[datapoint]["totalCars"] / total_result
 
         # get next API url, if available
         try:
