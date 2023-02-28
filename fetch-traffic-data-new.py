@@ -1,22 +1,32 @@
 import json
 import requests
-import haversine
 import time
 import os
 
-api = "https://iot.hamburg.de/v1.1/Datastreams?$filter=properties/serviceName eq 'HH_STA_HamburgerRadzaehlnetz' and properties/layerName eq 'Anzahl_Fahrraeder_Zaehlstelle_1-Stunde'&$expand=Observations($orderby=phenomenonTime desc;$top=1)"
+total_cars = 0
+total_bikes = 0
+data_cars = {}
+data_bikes = {}
 
 
-def main():
+def fetch_api(api_type):
+    """
+    Fetch, filter and evaluate API data for the amount of cars or bikes recently counted in Hamburg.
+    """
 
-    # print as json
-    # print(json.dumps(traffic_data, indent=4))
+    if api_type == "cars":
+        api = "https://iot.hamburg.de/v1.1/Datastreams?$filter=properties/serviceName eq 'HH_STA_AutomatisierteVerkehrsmengenerfassung' and properties/layerName eq 'Anzahl_Kfz_Zaehlstelle_15-Min'&$expand=Observations($orderby=phenomenonTime desc;$top=1)"
+    elif api_type == "bikes":
+        api = "https://iot.hamburg.de/v1.1/Datastreams?$filter=properties/serviceName%20eq%20%27HH_STA_HamburgerRadzaehlnetz%27%20and%20properties/layerName%20eq%20%27Anzahl_Fahrraeder_Zaehlstelle_15-Min%27&$expand=Observations($orderby=phenomenonTime%20desc;$top=1)"
+    else:
+        raise Exception("Invalid API type")
 
-    data = {}
-    next_url = True
+    global total_cars
+    global total_bikes
+    global data_cars
+    global data_bikes
 
-    counter = 0
-    while next_url and counter < 5:
+    while api:
         # Fetch traffic data from API
         traffic_data = requests.get(api)
         if traffic_data.status_code != 200:
@@ -24,27 +34,90 @@ def main():
         traffic_data = traffic_data.json()
 
         for datapoint in traffic_data["value"]:
-            id = datapoint["Observations"][0]["@iot.id"]
-            coords = datapoint["observedArea"]["coordinates"]
-            result = datapoint["Observations"][0]["result"]
-            result_time = datapoint["Observations"][0]["resultTime"]
-            print(id, coords, result, result_time)
-            # print(datapoint["Observations"][0]["result"])
+            try:
+                id = datapoint["Observations"][0]["@iot.id"]
+                coords = datapoint["observedArea"]["coordinates"]
+                amount = int(datapoint["Observations"][0]["result"])
+                timestamp = datapoint["Observations"][0]["resultTime"]
 
-            data.update({
-                "id": id,
-                "coords": coords,
-                "result": result,
-                "result_time": result_time
-            })
-        counter += 1
+                # Skip data with 0 cars/bikes
+                if amount == 0:
+                    continue
+
+                # Skip data older than 2 hours
+                time_check = time.mktime(
+                    time.strptime(timestamp, "%Y-%m-%dT%H:%M:%S.%fZ"))
+                if 7200 < (time.time() - time_check):
+                    continue
+
+                if api_type == "cars":
+                    data_cars.update({
+                        id: {
+                            "coordinates": coords,
+                            "totalCars": amount,
+                            "share": 0,
+                            "timestamp": timestamp
+                        }
+                    })
+                    total_cars += amount
+                if api_type == "bikes":
+                    data_bikes.update({
+                        id: {
+                            "coordinates": coords,
+                            "totalBikes": amount,
+                            "share": 0,
+                            "timestamp": timestamp
+                        }
+                    })
+                    total_bikes += amount
+
+            except:
+                continue
+
+        # Calculate share of cars/bikes
+        if api_type == "cars":
+            for datapoint in data_cars:
+                data_cars[datapoint][
+                    "share"] = data_cars[datapoint]["totalCars"] / total_cars
+        if api_type == "bikes":
+            for datapoint in data_bikes:
+                data_bikes[datapoint]["share"] = data_bikes[datapoint][
+                    "totalBikes"] / total_bikes
 
         # get next API url, if available
         try:
-            next_url = traffic_data["@iot.nextLink"]
-            print(next_url)
+            api = traffic_data["@iot.nextLink"]
         except:
-            next_url = None
+            api = None
+
+
+def main():
+    """
+    Write data to JSON history file after fetching it from the API.
+    """
+
+    fetch_api("cars")
+    fetch_api("bikes")
+
+    # Create folder for data if it doesn't exist
+    if not os.path.exists("history"):
+        os.makedirs("history")
+
+    date = time.strftime("%d.%m.%Y", time.localtime())
+    hour = time.strftime("%H:%M", time.localtime())
+
+    timestamp = int(time.time())
+
+    # Save data to JSON history file
+    with open(f"history/{date}-{hour}.json", "w") as outfile:
+        write = {
+            "cars": total_cars,
+            "bikes": total_bikes,
+            "timestamp": timestamp,
+            "dataCars": data_cars,
+            "dataBikes": data_bikes,
+        }
+        json.dump(write, outfile, indent=4)
 
 
 if __name__ == "__main__":
