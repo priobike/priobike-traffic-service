@@ -12,8 +12,7 @@ def main():
 
     data = {}
 
-    counter = 0
-    while api and counter < 5:
+    while api:
         # Fetch traffic data from API
         traffic_data = requests.get(api)
         if traffic_data.status_code != 200:
@@ -21,7 +20,7 @@ def main():
         traffic_data = traffic_data.json()
 
         # print json
-        print(json.dumps(traffic_data, indent=4))
+        # print(json.dumps(traffic_data, indent=4))
 
         for datapoint in traffic_data["value"]:
             try:
@@ -29,7 +28,7 @@ def main():
                 coords = datapoint["observedArea"]["coordinates"]
                 result = datapoint["Observations"][0]["result"]
                 result_time = datapoint["Observations"][0]["resultTime"]
-                print(id, coords, result, result_time)
+                # print(id, coords, result, result_time)
 
                 data.update({
                     "@iot.id": id,
@@ -39,14 +38,15 @@ def main():
                 })
             except:
                 continue
-        counter += 1
 
         # get next API url, if available
         try:
             api = traffic_data["@iot.nextLink"]
             print(api)
         except:
+            print("No more data available")
             api = None
+    print("Script finished")
 
 
 if __name__ == "__main__":
