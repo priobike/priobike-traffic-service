@@ -24,33 +24,32 @@ def main():
             try:
                 id = datapoint["Observations"][0]["@iot.id"]
                 coords = datapoint["observedArea"]["coordinates"]
-                result = datapoint["Observations"][0]["result"]
-                result_time = datapoint["Observations"][0]["resultTime"]
+                cars = int(datapoint["Observations"][0]["result"])
+                timestamp = datapoint["Observations"][0]["resultTime"]
 
-                # Skip data not from today
-                today = time.strftime("%Y-%m-%d", time.localtime())
-                if not result_time.startswith(today):
+                # Skip data with 0 cars
+                if cars == 0:
+                    continue
+
+                # Skip data older than 2 hours
+                time_check = time.mktime(
+                    time.strptime(timestamp, "%Y-%m-%dT%H:%M:%S.%fZ"))
+                if 7200 < (time.time() - time_check):
                     continue
 
                 data.update({
                     id: {
                         "coordinates": coords,
-                        "totalCars": result,
+                        "totalCars": cars,
                         "share": 0,
-                        "time": result_time
+                        "timestamp": timestamp
                     }
                 })
 
-                total_result += result
-
-                # # check if coords contain a list of coordinates
-                # if isinstance(coords[0], list):
-                #     print("List of coordinates")
+                total_result += cars
 
             except:
                 continue
-
-        print("Total cars seen:", total_result)
 
         # Calculate share of cars
         for datapoint in data:
@@ -60,9 +59,7 @@ def main():
         # get next API url, if available
         try:
             api = traffic_data["@iot.nextLink"]
-            # print(api)
         except:
-            print("No more data available")
             api = None
 
     # Create folder for data if it doesn't exist
@@ -74,7 +71,7 @@ def main():
 
     timestamp = int(time.time())
 
-    # save data to json file
+    # save data to JSON history file
     with open(f"history/{date}-{hour}.json", "w") as outfile:
         write = {
             "cars": total_result,
@@ -82,8 +79,6 @@ def main():
             "data": data,
         }
         json.dump(write, outfile, indent=4)
-
-    print("Done")
 
 
 if __name__ == "__main__":
