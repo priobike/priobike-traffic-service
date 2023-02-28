@@ -13,7 +13,7 @@ def fetch_API(api_type):
     if api_type == "cars":
         api = "https://iot.hamburg.de/v1.1/Datastreams?$filter=properties/serviceName eq 'HH_STA_AutomatisierteVerkehrsmengenerfassung' and properties/layerName eq 'Anzahl_Kfz_Zaehlstelle_15-Min'&$expand=Observations($orderby=phenomenonTime desc;$top=1)"
     elif api_type == "bikes":
-        api = "https://iot.hamburg.de/v1.1/Datastreams?$filter=properties/serviceName eq 'HH_STA_HamburgerRadzaehlnetz' and properties/layerName eq 'Anzahl_Fahrraeder_Zaehlstelle_1-Stunde'&$expand=Observations($orderby=phenomenonTime desc;$top=1)"
+        api = "https://iot.hamburg.de/v1.1/Datastreams?$filter=properties/serviceName%20eq%20%27HH_STA_HamburgerRadzaehlnetz%27%20and%20properties/layerName%20eq%20%27Anzahl_Fahrraeder_Zaehlstelle_15-Min%27&$expand=Observations($orderby=phenomenonTime%20desc;$top=1)"
     else:
         raise Exception("Invalid API type")
 
@@ -41,16 +41,10 @@ def fetch_API(api_type):
                     continue
 
                 # Skip data older than 2 hours for cars and one day for bikes
-                if api_type == "cars":
-                    time_check = time.mktime(
-                        time.strptime(timestamp, "%Y-%m-%dT%H:%M:%S.%fZ"))
-                    if 7200 < (time.time() - time_check):
-                        continue
-                if api_type == "bikes":
-                    time_check = time.mktime(
-                        time.strptime(timestamp, "%Y-%m-%dT%H:%M:%S.%fZ"))
-                    if 86400 < (time.time() - time_check):
-                        continue
+                time_check = time.mktime(
+                    time.strptime(timestamp, "%Y-%m-%dT%H:%M:%S.%fZ"))
+                if 7200 < (time.time() - time_check):
+                    continue
 
                 if api_type == "cars":
                     data_cars.update({
