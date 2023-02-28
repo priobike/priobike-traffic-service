@@ -26,28 +26,33 @@ def main():
                 coords = datapoint["observedArea"]["coordinates"]
                 result = datapoint["Observations"][0]["result"]
                 result_time = datapoint["Observations"][0]["resultTime"]
-                # print(id, coords, result, result_time)
+
+                # Skip data not from today
+                today = time.strftime("%Y-%m-%d", time.localtime())
+                if not result_time.startswith(today):
+                    continue
 
                 data.update({
-                    "@iot.id": id,
-                    "coordinates": coords,
-                    "totalCars": result,
-                    "share": 0,
-                    "time": result_time
+                    id: {
+                        "coordinates": coords,
+                        "totalCars": result,
+                        "share": 0,
+                        "time": result_time
+                    }
                 })
 
                 total_result += result
 
-                # check if coords contain a list of coordinates
-                if isinstance(coords[0], list):
-                    print("List of coordinates")
+                # # check if coords contain a list of coordinates
+                # if isinstance(coords[0], list):
+                #     print("List of coordinates")
 
             except:
                 continue
 
         print("Total cars seen:", total_result)
 
-        # calculate share of cars
+        # Calculate share of cars
         for datapoint in data:
             data[datapoint][
                 "share"] = data[datapoint]["totalCars"] / total_result
@@ -55,11 +60,30 @@ def main():
         # get next API url, if available
         try:
             api = traffic_data["@iot.nextLink"]
-            print(api)
+            # print(api)
         except:
             print("No more data available")
             api = None
-    print("Script finished")
+
+    # Create folder for data if it doesn't exist
+    if not os.path.exists("history"):
+        os.makedirs("history")
+
+    date = time.strftime("%d.%m.%Y", time.localtime())
+    hour = time.strftime("%H:%M", time.localtime())
+
+    timestamp = int(time.time())
+
+    # save data to json file
+    with open(f"history/{date}-{hour}.json", "w") as outfile:
+        write = {
+            "cars": total_result,
+            "timestamp": timestamp,
+            "data": data,
+        }
+        json.dump(write, outfile, indent=4)
+
+    print("Done")
 
 
 if __name__ == "__main__":
