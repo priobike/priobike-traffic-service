@@ -2,3 +2,4 @@ history/*
 !history/.gitkeep
 .DS_Store
 prediction.json
+.ipynb_checkpoints

@@ -1,19 +1,20 @@
 import json
-import requests
-import haversine
-import time
 import os
+import time
+
+import haversine
+import requests
 
 api = f"https://api.hamburg.de/datasets/v1/verkehrslage/collections/verkehrslage/items?&offset=0&bulk=True&f=json"
 
-def main():
+def main(history_dir):
     """
     Fetch the traffic data and write it to a history json file.
     """
 
     # Create folder for data if it doesn't exist
-    if not os.path.exists("history"):
-        os.makedirs("history")
+    if not os.path.exists(history_dir or 'history'):
+        os.makedirs(history_dir or 'history')
 
     # Fetch traffic data from API
     traffic_data = requests.get(api)
@@ -35,17 +36,17 @@ def main():
             length += haversine.haversine((lat1, lon1), (lat2, lon2), unit="m")
 
         # Calculate weight based on traffic status
-        match datapoint["properties"]["zustandsklasse"]:
-            case "gestaut":
-                weight = 0
-            case "zäh":
-                weight = 1/3
-            case "dicht":
-                weight = 2/3
-            case "fliessend":
-                weight = 1
-            case _:
-                weight = 0
+        c = datapoint["properties"]["zustandsklasse"]
+        if c == "gestaut":
+            weight = 0
+        elif c == "zäh":
+            weight = 1/3
+        elif c == "dicht":
+            weight = 2/3
+        elif c == "fliessend":
+            weight = 1
+        else:
+            weight = 0
 
         paths.update({id: {
             "length": length, 
@@ -66,9 +67,16 @@ def main():
     timestamp = int(time.time())
 
     # save data to json file
-    with open(f"history/{date}-{hour}.json", "w") as outfile:
+    with open(f"{history_dir or 'history'}/{date}-{hour}.json", "w") as outfile:
         write = {"trafficflow": sum_score, "timestamp": timestamp, "paths": len(paths)}
         json.dump(write, outfile, indent=4)
 
 if __name__ == "__main__":
-    main()
+    # Get an optional path under which the data should be saved
+    import sys
+    if len(sys.argv) > 1:
+        history_dir = sys.argv[1]
+    else:
+        history_dir = None
+
+    main(history_dir)
