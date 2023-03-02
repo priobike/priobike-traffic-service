@@ -49,7 +49,8 @@ def main():
     # Get files in the history folder
     files = os.listdir("history")
     files = [file for file in files if file.endswith(".json")]
-    files.sort(reverse=True)
+    key = lambda x: int(time.mktime(time.strptime(x, "%d.%m.%Y-%H:%M.json")))
+    files.sort(key=key, reverse=True)
 
     hour_now = int(time.strftime("%H", time.localtime()))
 
@@ -59,8 +60,6 @@ def main():
     for offset in range(-1, 5 + 1, 1):
         hour_score = calculate_historic_average(hour_now + offset, files)
         prediction.update({hour_now + offset: hour_score})
-
-        print("Hour:", hour_now + offset, "\tScore:", hour_score)
 
     with open(f"prediction.json", "w") as outfile:
         json.dump(prediction, outfile, indent=4)
