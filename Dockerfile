@@ -22,9 +22,6 @@ WORKDIR /app
 # Set timezone to Berlin
 RUN ln -snf /usr/share/zoneinfo/Europe/Berlin /etc/localtime && echo Europe/Berlin > /etc/timezone
 
-# Copy the history
-COPY history /usr/share/nginx/html/history
-
 # Fetch the current traffic data
 RUN python3 /app/fetch-traffic-data.py /usr/share/nginx/html/history
 RUN python3 /app/predict-traffic.py /usr/share/nginx/html/history /usr/share/nginx/html/prediction.json
