@@ -42,6 +42,10 @@ def calculate_historic_average(hour_now, files):
 
 
 def main():
+    """
+    Read history json files and calculate average score for each hour to make a prediction
+    """
+
     # Get files in the history folder
     files = os.listdir("history")
     files = [file for file in files if file.endswith(".json")]
@@ -51,8 +55,8 @@ def main():
 
     prediction = {}
 
-    # Get the average scores from hour -1 to hour +4
-    for offset in range(-1, 4 + 1, 1):
+    # Get the average scores from hour -1 to hour +5
+    for offset in range(-1, 5 + 1, 1):
         hour_score = calculate_historic_average(hour_now + offset, files)
         prediction.update({hour_now + offset: hour_score})
 
