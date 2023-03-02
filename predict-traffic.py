@@ -62,15 +62,7 @@ def main():
 
         print("Hour:", hour_now + offset, "\tScore:", hour_score)
 
-    # Save prediction to JSON file
-    if not os.path.exists("prediction"):
-        os.makedirs("prediction")
-
-    date_output = time.strftime("%d.%m.%Y", time.localtime())
-    hour_output = time.strftime("%H:%M", time.localtime())
-
-    # save data to json file
-    with open(f"prediction/{date_output}-{hour_output}.json", "w") as outfile:
+    with open(f"prediction.json", "w") as outfile:
         json.dump(prediction, outfile, indent=4)
 
 

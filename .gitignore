@@ -1,5 +1,4 @@
 history/*
 !history/.gitkeep
-prediction/*
-!prediction/.gitkeep
 .DS_Store
+prediction.json
