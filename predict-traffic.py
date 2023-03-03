@@ -58,8 +58,15 @@ def main(history_dir, prediction_path):
 
     # Get the average scores from hour -1 to hour +5
     for offset in range(-1, 5 + 1, 1):
-        hour_score = calculate_historic_average(hour_now + offset, history_dir, files)
+        hour_score = calculate_historic_average(hour_now + offset, history_dir,
+                                                files)
         prediction.update({hour_now + offset: hour_score})
+
+    # Get the current score by reading the first file (which is the newest one, because the list is sorted)
+    with open(f"{history_dir or 'history'}/{files[0]}", "r") as file:
+        data = json.load(file)
+        score_now = data["trafficflow"]
+        prediction.update({"now": score_now})
 
     with open(prediction_path or "prediction.json", "w") as outfile:
         json.dump(prediction, outfile, indent=4)
