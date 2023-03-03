@@ -3,26 +3,27 @@ import os
 import time
 
 time_now = int(time.time())
-time_7_days_ago = time_now - 60 * 60 * 24 * 7
+time_60_days_ago = time_now - 60 * 60 * 24 * 60
 
 
 def calculate_historic_average(hour_now, history_dir, files):
     """
-    Build average for a given hour over max. last 7 days
+    Build average for a given hour over max. last 60 days
     Returns the average score for the given hour or None if no data is available
     """
 
-    global time_now, time_7_days_ago
+    global time_now, time_60_days_ago
 
     scores = []
 
     for filename in files:
-        # get timestamp from filename
+        # Get timestamp from filename
         timestamp = time.mktime(time.strptime(filename, "%d.%m.%Y-%H:%M.json"))
 
-        # discard files older than 7 days. Files are sorted by date, therefore break at first file older than 7 days
-        if timestamp < time_7_days_ago:
-            break
+        # Delete files older than 60 days. Files are sorted by date.
+        if timestamp < time_60_days_ago:
+            os.remove(f"{history_dir or 'history'}/{filename}")
+            continue
 
         # extract hour from timestamp
         data_hour = int(time.strftime("%H", time.localtime(timestamp)))
