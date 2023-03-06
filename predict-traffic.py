@@ -1,7 +1,6 @@
 import json
 import os
 import time
-import sys
 
 days_to_include = 60  # How many days to include in the prediction, older data will be automatically deleted
 time_now = int(time.time())
@@ -36,20 +35,21 @@ def main(history_dir, prediction_path):
         prediction_data = use_same_day(hour_now + offset, history_dir, files)
         if prediction_data is not None:
             prediction.update({hour_now + offset: prediction_data})
-            prediction.update({"QUALITY " + str(hour_now + offset): "HIGH"})
+            prediction.update({"quality_" + str(hour_now + offset): "high"})
             continue
         prediction_data = use_weekday_or_weekend(hour_now + offset,
                                                  history_dir, files)
         if prediction_data is not None:
             prediction.update({hour_now + offset: prediction_data})
-            prediction.update({"QUALITY " + str(hour_now + offset): "MEDIUM"})
+            prediction.update({"quality_" + str(hour_now + offset): "medium"})
             continue
         prediction_data = use_same_hour(hour_now + offset, history_dir, files)
         if prediction_data is not None:
             prediction.update({hour_now + offset: prediction_data})
-            prediction.update({"QUALITY " + str(hour_now + offset): "LOW"})
+            prediction.update({"quality_" + str(hour_now + offset): "low"})
             continue
         prediction.update({hour_now + offset: None})
+        prediction.update({"quality_" + str(hour_now + offset): None})
 
     # Get the current score by reading the first file (which is the newest one, because the list is sorted)
     with open(f"{history_dir or 'history'}/{files[0]}", "r") as file:
@@ -171,6 +171,8 @@ def use_same_hour(check_hour, history_dir, files):
 
 
 if __name__ == "__main__":
+    import sys
+
     # Get an optional path under which the data should be saved
     if len(sys.argv) > 1:
         history_dir = sys.argv[1]
