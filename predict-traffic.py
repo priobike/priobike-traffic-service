@@ -14,9 +14,9 @@ def main(history_dir, prediction_path):
     Read history json files and calculate average score for each hour to make a prediction
     Build average for a given hour over max. last 60 days (see "days_to_include")
     There are 3 different quality levels for the prediction:
-    It first tries to get the score for the given hour and same day of the week (marked in prediction.json as HIGH quality)
-    If there is not enough data, it tries to get the score for the given hour within the whole workweek/weekend (marked in prediction.json as MEDIUM quality)
-    If there is still not enough data, it tries to get the score for the given hour, no matter the day (marked in prediction.json as LOW quality)
+    It first tries to get the score for the given hour and same day of the week (marked in prediction.json as high quality)
+    If there is not enough data, it tries to get the score for the given hour within the whole workweek/weekend (marked in prediction.json as medium quality)
+    If there is still not enough data, it tries to get the score for the given hour, no matter the day (marked in prediction.json as low quality)
     """
 
     # Get files in the history folder
@@ -84,7 +84,7 @@ def prune_old_files(history_dir, files):
 
 def use_same_day(check_hour, history_dir, files):
     """
-    Get the score for the given hour and same day of the week (marked in prediction.json as HIGH quality)
+    Get the score for the given hour and same day of the week (marked in prediction.json as high quality)
     """
     global date_now, weekday_now
     scores = []
@@ -110,7 +110,7 @@ def use_same_day(check_hour, history_dir, files):
 
 def use_weekday_or_weekend(check_hour, history_dir, files):
     """
-    Get the score for the given hour within the whole workweek/weekend (marked in prediction.json as MEDIUM quality)
+    Get the score for the given hour within the whole workweek/weekend (marked in prediction.json as medium quality)
     """
 
     global date_now, weekday_now
@@ -148,7 +148,7 @@ def use_weekday_or_weekend(check_hour, history_dir, files):
 
 def use_same_hour(check_hour, history_dir, files):
     """
-    Get the score for the given hour, no matter the day or weekend/weekday (marked in prediction.json as LOW quality)
+    Get the score for the given hour, no matter the day or weekend/weekday (marked in prediction.json as low quality)
     """
 
     scores = []
