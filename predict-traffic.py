@@ -34,18 +34,21 @@ def main(history_dir, prediction_path):
     for offset in range(-1, 5 + 1, 1):
         prediction_data = use_same_day(hour_now + offset, history_dir, files)
         if prediction_data is not None:
-            prediction.update({hour_now + offset: prediction_data})
+            prediction.update(
+                {"data_" + str(hour_now + offset): prediction_data})
             prediction.update({"quality_" + str(hour_now + offset): "high"})
             continue
         prediction_data = use_weekday_or_weekend(hour_now + offset,
                                                  history_dir, files)
         if prediction_data is not None:
-            prediction.update({hour_now + offset: prediction_data})
+            prediction.update(
+                {"data_" + str(hour_now + offset): prediction_data})
             prediction.update({"quality_" + str(hour_now + offset): "medium"})
             continue
         prediction_data = use_same_hour(hour_now + offset, history_dir, files)
         if prediction_data is not None:
-            prediction.update({hour_now + offset: prediction_data})
+            prediction.update(
+                {"data_" + str(hour_now + offset): prediction_data})
             prediction.update({"quality_" + str(hour_now + offset): "low"})
             continue
         prediction.update({hour_now + offset: None})
