@@ -13,7 +13,8 @@ weekday_now = int(time.strftime("%w", time.localtime()))
 def main(history_dir, prediction_path):
     """
     Read history json files and calculate average score for each hour to make a prediction
-    Build average for a given hour over max. last 60 days (see "days_to_include").
+    Build average for a given hour over max. last 60 days (see "days_to_include")
+    There are 3 different quality levels for the prediction:
     It first tries to get the score for the given hour and same day of the week (marked in prediction.json as HIGH quality)
     If there is not enough data, it tries to get the score for the given hour within the whole workweek/weekend (marked in prediction.json as MEDIUM quality)
     If there is still not enough data, it tries to get the score for the given hour, no matter the day (marked in prediction.json as LOW quality)
