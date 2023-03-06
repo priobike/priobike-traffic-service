@@ -73,7 +73,7 @@ def prune_old_files(history_dir, files):
         # Get timestamp from filename
         timestamp = time.mktime(time.strptime(filename, "%d.%m.%Y-%H:%M.json"))
 
-        # Delete files older than x days. Files are sorted by date.
+        # Delete files old files
         if timestamp < time_oldest:
             os.remove(f"{history_dir or 'history'}/{filename}")
             removed.append(filename)
