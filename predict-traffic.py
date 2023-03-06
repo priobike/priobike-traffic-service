@@ -63,8 +63,7 @@ def main(history_dir, prediction_path):
 
 def prune_old_files(history_dir, files):
     """
-    Deletes files older than 60 days (see "days_to_include") and removes them from the list.
-    Files must be sorted by date.
+    Deletes files older than 60 days (see "days_to_include").
     """
 
     global time_oldest
