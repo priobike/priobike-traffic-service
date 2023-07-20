@@ -1,4 +1,4 @@
-FROM nginx
+FROM nginx:1.24
 
 # Install pip
 RUN apt-get update && apt-get install -y python3-pip
