@@ -18,6 +18,8 @@ def main(history_dir, prediction_path):
     If there is not enough data, it tries to get the score for the given hour within the whole workweek/weekend (marked in prediction.json as medium quality)
     If there is still not enough data, it tries to get the score for the given hour, no matter the day (marked in prediction.json as low quality)
     """
+    
+    global date_now, weekday_now
 
     # Get files in the history folder
     files = os.listdir(history_dir or "history")
@@ -32,24 +34,30 @@ def main(history_dir, prediction_path):
 
     # Get the average scores from hour now-1 to hour now+5
     for offset in range(-1, 5 + 1, 1):
-        prediction_data = use_same_day(hour_now + offset, history_dir, files)
+        hour_to_check = (hour_now + offset) % 24
+        if hour_to_check != (hour_now + offset):
+            # Switch to next day
+            t = time_now + (60 * 60 * 24)
+            date_now = time.strftime("%d.%m.%Y", time.localtime(t))
+            weekday_now = int(time.strftime("%w", time.localtime(t)))
+        prediction_data = use_same_day(hour_to_check, history_dir, files)
         if prediction_data is not None:
-            prediction.update({hour_now + offset: prediction_data})
-            prediction.update({"quality_" + str(hour_now + offset): "high"})
+            prediction.update({hour_to_check: prediction_data})
+            prediction.update({"quality_" + str(hour_to_check): "high"})
             continue
-        prediction_data = use_weekday_or_weekend(hour_now + offset,
+        prediction_data = use_weekday_or_weekend(hour_to_check,
                                                  history_dir, files)
         if prediction_data is not None:
-            prediction.update({hour_now + offset: prediction_data})
-            prediction.update({"quality_" + str(hour_now + offset): "medium"})
+            prediction.update({hour_to_check: prediction_data})
+            prediction.update({"quality_" + str(hour_to_check): "medium"})
             continue
-        prediction_data = use_same_hour(hour_now + offset, history_dir, files)
+        prediction_data = use_same_hour(hour_to_check, history_dir, files)
         if prediction_data is not None:
-            prediction.update({hour_now + offset: prediction_data})
-            prediction.update({"quality_" + str(hour_now + offset): "low"})
+            prediction.update({hour_to_check: prediction_data})
+            prediction.update({"quality_" + str(hour_to_check): "low"})
             continue
-        prediction.update({hour_now + offset: None})
-        prediction.update({"quality_" + str(hour_now + offset): None})
+        prediction.update({hour_to_check: None})
+        prediction.update({"quality_" + str(hour_to_check): None})
 
     # Get the current score by reading the first file (which is the newest one, because the list is sorted)
     with open(f"{history_dir or 'history'}/{files[0]}", "r") as file:
