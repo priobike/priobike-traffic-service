@@ -34,28 +34,32 @@ def main(history_dir, prediction_path):
 
     # Get the average scores from hour now-1 to hour now+5
     for offset in range(-1, 5 + 1, 1):
+        # Check if we need to look at the next day
         hour_to_check = (hour_now + offset) % 24
         if hour_to_check != (hour_now + offset):
             # Switch to next day
             t = time_now + (60 * 60 * 24)
             date_now = time.strftime("%d.%m.%Y", time.localtime(t))
             weekday_now = int(time.strftime("%w", time.localtime(t)))
+            
         prediction_data = use_same_day(hour_to_check, history_dir, files)
         if prediction_data is not None:
             prediction.update({hour_to_check: prediction_data})
             prediction.update({"quality_" + str(hour_to_check): "high"})
             continue
-        prediction_data = use_weekday_or_weekend(hour_to_check,
-                                                 history_dir, files)
+        
+        prediction_data = use_weekday_or_weekend(hour_to_check, history_dir, files)
         if prediction_data is not None:
             prediction.update({hour_to_check: prediction_data})
             prediction.update({"quality_" + str(hour_to_check): "medium"})
             continue
+        
         prediction_data = use_same_hour(hour_to_check, history_dir, files)
         if prediction_data is not None:
             prediction.update({hour_to_check: prediction_data})
             prediction.update({"quality_" + str(hour_to_check): "low"})
             continue
+        
         prediction.update({hour_to_check: None})
         prediction.update({"quality_" + str(hour_to_check): None})
 
