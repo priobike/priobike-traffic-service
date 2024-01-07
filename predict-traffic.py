@@ -2,7 +2,7 @@ import json
 import os
 import time
 
-days_to_include = 60  # How many days to include in the prediction, older data will be automatically deleted
+days_to_include = 900  # How many days to include in the prediction, older data will be automatically deleted
 time_now = int(time.time())
 time_oldest = time_now - 60 * 60 * 24 * days_to_include
 date_now = time.strftime("%d.%m.%Y", time.localtime())
