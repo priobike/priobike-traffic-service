@@ -5,26 +5,41 @@ import time
 import haversine
 import requests
 
-api = f"https://api.hamburg.de/datasets/v1/verkehrslage/collections/verkehrslage/items?&offset=0&bulk=True&f=json"
-
 def main(history_dir):
     """
     Fetch the traffic data and write it to a history json file.
     """
+
+    api_link = f"https://api.hamburg.de/datasets/v1/verkehrslage/collections/verkehrslage/items?&f=json&limit=100&offset=0"
 
     # Create folder for data if it doesn't exist
     if not os.path.exists(history_dir or 'history'):
         os.makedirs(history_dir or 'history')
 
     # Fetch traffic data from API
-    traffic_data = requests.get(api)
-    if traffic_data.status_code != 200:
-        raise Exception("Error fetching traffic data")
-    traffic_data = traffic_data.json()
+    traffic_data = []
+    page = 0
+    while True:
+        print(f'Downloading page {page} from {api_link}')
+        response = requests.get(api_link)
+        response.raise_for_status()
+        response_json = response.json()
+        if 'features' and 'links' not in response_json:
+            raise Exception('Missing value in response')
+        for feature in response_json['features']:
+            traffic_data.append(feature)
+        for link in response_json["links"]:
+            if link["rel"] == "next":
+                next_link = link["href"]
+        if api_link == next_link:
+            print('Finished downloading all traffic data')
+            break
+        api_link = next_link
+        page += 1
 
     # Parse the api data
     paths = {}
-    for datapoint in traffic_data["features"]:
+    for datapoint in traffic_data:
         id = datapoint["id"]
 
         # Sum up the length along the linestring.
