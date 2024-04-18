@@ -1,5 +1,4 @@
-ARG ENVIRONMENT=release
-FROM bikenow.vkw.tu-dresden.de/priobike/priobike-nginx:${ENVIRONMENT}
+FROM bikenow.vkw.tu-dresden.de/priobike/priobike-nginx:v1.0
 
 # Install pip
 RUN apt-get update && apt-get install -y python3-pip
