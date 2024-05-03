@@ -1,0 +1,39 @@
+version: '2'
+
+services:
+  traffic-service:
+    build: .
+    environment:
+      - WORKER=false
+      - HISTORY_DIR=/usr/share/nginx/html/history
+    hostname: traffic-service
+    volumes:
+      # Mount a volume under the nginx dir to not lose the files
+      - traffic_service_staticfiles:/usr/share/nginx/html/
+    networks:
+      - sync_network
+  
+  traffic-service-worker:
+    build: .
+    depends_on:
+      - traffic-service
+    environment:
+      - WORKER=true
+      - HOST=traffic-service
+      - HISTORY_DIR=/usr/share/nginx/html/history
+    volumes:
+      # Mount a volume under the nginx dir to not lose the files
+      - traffic_service_worker_staticfiles:/usr/share/nginx/html/
+    networks:
+      - sync_network
+    restart: unless-stopped
+  
+networks:
+  sync_network:
+    name: sync_network
+
+volumes:
+  traffic_service_worker_staticfiles:
+    name: staging-traffic-service-worker-staticfiles
+  traffic_service_staticfiles: 
+    name: staging-traffic-service-staticfiles

@@ -9,7 +9,7 @@ date_now = time.strftime("%d.%m.%Y", time.localtime())
 weekday_now = int(time.strftime("%w", time.localtime()))
 
 
-def main(history_dir, prediction_path):
+def main(prediction_path):
     """
     Read history json files and calculate average score for each hour to make a prediction
     Build average for a given hour over max. last 60 days (see "days_to_include")
@@ -18,6 +18,10 @@ def main(history_dir, prediction_path):
     If there is not enough data, it tries to get the score for the given hour within the whole workweek/weekend (marked in prediction.json as medium quality)
     If there is still not enough data, it tries to get the score for the given hour, no matter the day (marked in prediction.json as low quality)
     """
+
+    history_dir = os.environ.get("HISTORY_DIR") 
+    if history_dir is None:
+        raise ValueError('History directory is not specified')
     
     global date_now, weekday_now
 
@@ -186,11 +190,9 @@ if __name__ == "__main__":
     import sys
 
     # Get an optional path under which the data should be saved
-    if len(sys.argv) > 1:
-        history_dir = sys.argv[1]
-        prediction_path = sys.argv[2]
+    if len(sys.argv) > 0:
+        prediction_path = sys.argv[1]
     else:
-        history_dir = None
         prediction_path = None
 
-    main(history_dir, prediction_path)
+    main(prediction_path)
