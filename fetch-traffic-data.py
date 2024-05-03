@@ -123,6 +123,9 @@ def worker_fetch(history_dir):
     host = os.environ.get("HOST")
     if host is None:
         raise ValueError('Host is not specified')
+    
+    # wait for a random amount of time and retry
+    time.sleep(random.randint(10, 30))
 
     history_files_link = f"http://{host}/history/history_files.txt"
 
@@ -151,8 +154,6 @@ def worker_fetch(history_dir):
     new_files = list(set(files) - set(old_files))
     
     if len(new_files) == 0:
-        # wait for a random amount of time and retry
-        time.sleep(random.randint(5, 20))
         worker_fetch(history_dir)
         return
 
