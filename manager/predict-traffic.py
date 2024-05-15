@@ -2,6 +2,8 @@ import json
 import os
 import time
 
+from push import push_to_workers
+
 days_to_include = 900  # How many days to include in the prediction, older data will be automatically deleted
 time_now = int(time.time())
 time_oldest = time_now - 60 * 60 * 24 * days_to_include
@@ -9,7 +11,7 @@ date_now = time.strftime("%d.%m.%Y", time.localtime())
 weekday_now = int(time.strftime("%w", time.localtime()))
 
 
-def main(history_dir, prediction_path):
+def main(prediction_path):
     """
     Read history json files and calculate average score for each hour to make a prediction
     Build average for a given hour over max. last 60 days (see "days_to_include")
@@ -22,12 +24,12 @@ def main(history_dir, prediction_path):
     global date_now, weekday_now
 
     # Get files in the history folder
-    files = os.listdir(history_dir or "history")
+    files = os.listdir("history")
     files = [file for file in files if file.endswith(".json")]
     key = lambda x: int(time.mktime(time.strptime(x, "%d.%m.%Y-%H:%M.json")))
     files.sort(key=key, reverse=True)
 
-    prune_old_files(history_dir, files)
+    prune_old_files(files)
 
     hour_now = int(time.strftime("%H", time.localtime()))
     prediction = {}
@@ -42,19 +44,19 @@ def main(history_dir, prediction_path):
             date_now = time.strftime("%d.%m.%Y", time.localtime(t))
             weekday_now = int(time.strftime("%w", time.localtime(t)))
             
-        prediction_data = use_same_day(hour_to_check, history_dir, files)
+        prediction_data = use_same_day(hour_to_check, files)
         if prediction_data is not None:
             prediction.update({hour_to_check: prediction_data})
             prediction.update({"quality_" + str(hour_to_check): "high"})
             continue
         
-        prediction_data = use_weekday_or_weekend(hour_to_check, history_dir, files)
+        prediction_data = use_weekday_or_weekend(hour_to_check, files)
         if prediction_data is not None:
             prediction.update({hour_to_check: prediction_data})
             prediction.update({"quality_" + str(hour_to_check): "medium"})
             continue
         
-        prediction_data = use_same_hour(hour_to_check, history_dir, files)
+        prediction_data = use_same_hour(hour_to_check, files)
         if prediction_data is not None:
             prediction.update({hour_to_check: prediction_data})
             prediction.update({"quality_" + str(hour_to_check): "low"})
@@ -64,16 +66,17 @@ def main(history_dir, prediction_path):
         prediction.update({"quality_" + str(hour_to_check): None})
 
     # Get the current score by reading the first file (which is the newest one, because the list is sorted)
-    with open(f"{history_dir or 'history'}/{files[0]}", "r") as file:
+    with open(f"history/{files[0]}", "r") as file:
         data = json.load(file)
         score_now = data["trafficflow"]
         prediction.update({"now": score_now})
 
     with open(prediction_path or "prediction.json", "w") as outfile:
         json.dump(prediction, outfile, indent=4)
+        push_to_workers("prediction.json", json.dumps(prediction))
 
 
-def prune_old_files(history_dir, files):
+def prune_old_files(files):
     """
     Deletes files older than 60 days (see "days_to_include").
     """
@@ -87,14 +90,14 @@ def prune_old_files(history_dir, files):
 
         # Delete files old files
         if timestamp < time_oldest:
-            os.remove(f"{history_dir or 'history'}/{filename}")
+            os.remove(f"history/{filename}")
             removed.append(filename)
 
     for filename in removed:
         files.remove(filename)
 
 
-def use_same_day(check_hour, history_dir, files):
+def use_same_day(check_hour, files):
     """
     Get the score for the given hour and same day of the week (marked in prediction.json as high quality)
     """
@@ -111,7 +114,7 @@ def use_same_day(check_hour, history_dir, files):
 
         # If we have data for the given hour and same day of the week
         if data_hour == check_hour and data_day == weekday_now and data_date != date_now:
-            with open(f"{history_dir or 'history'}/{filename}", "r") as file:
+            with open(f"history/{filename}", "r") as file:
                 data = json.load(file)
                 score = data["trafficflow"]
                 scores.append(score)
@@ -120,7 +123,7 @@ def use_same_day(check_hour, history_dir, files):
     return sum(scores) / len(scores) if len(scores) != 0 else None
 
 
-def use_weekday_or_weekend(check_hour, history_dir, files):
+def use_weekday_or_weekend(check_hour, files):
     """
     Get the score for the given hour within the whole workweek/weekend (marked in prediction.json as medium quality)
     """
@@ -139,7 +142,7 @@ def use_weekday_or_weekend(check_hour, history_dir, files):
         if weekday_now <= 5:
             # workweek
             if data_hour == check_hour and data_day <= 5:
-                with open(f"{history_dir or 'history'}/{filename}",
+                with open(f"history/{filename}",
                           "r") as file:
                     data = json.load(file)
                     score = data["trafficflow"]
@@ -148,7 +151,7 @@ def use_weekday_or_weekend(check_hour, history_dir, files):
         else:
             # weekend
             if data_hour == check_hour and data_day > 5:
-                with open(f"{history_dir or 'history'}/{filename}",
+                with open(f"history/{filename}",
                           "r") as file:
                     data = json.load(file)
                     score = data["trafficflow"]
@@ -158,7 +161,7 @@ def use_weekday_or_weekend(check_hour, history_dir, files):
     return sum(scores) / len(scores) if len(scores) != 0 else None
 
 
-def use_same_hour(check_hour, history_dir, files):
+def use_same_hour(check_hour, files):
     """
     Get the score for the given hour, no matter the day or weekend/weekday (marked in prediction.json as low quality)
     """
@@ -173,7 +176,7 @@ def use_same_hour(check_hour, history_dir, files):
 
         # If there is not enough data, get the average score for the given hour
         if data_hour == check_hour:
-            with open(f"{history_dir or 'history'}/{filename}", "r") as file:
+            with open(f"history/{filename}", "r") as file:
                 data = json.load(file)
                 score = data["trafficflow"]
                 scores.append(score)
@@ -187,10 +190,8 @@ if __name__ == "__main__":
 
     # Get an optional path under which the data should be saved
     if len(sys.argv) > 1:
-        history_dir = sys.argv[1]
-        prediction_path = sys.argv[2]
+        prediction_path = sys.argv[1]
     else:
-        history_dir = None
         prediction_path = None
 
-    main(history_dir, prediction_path)
+    main(prediction_path)

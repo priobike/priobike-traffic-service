@@ -5,7 +5,7 @@ import time
 import haversine
 import requests
 
-def main(history_dir):
+def main():
     """
     Fetch the traffic data and write it to a history json file.
     """
@@ -13,8 +13,8 @@ def main(history_dir):
     api_link = f"https://api.hamburg.de/datasets/v1/verkehrslage/collections/verkehrslage/items?&f=json&limit=100&offset=0"
 
     # Create folder for data if it doesn't exist
-    if not os.path.exists(history_dir or 'history'):
-        os.makedirs(history_dir or 'history')
+    if not os.path.exists('history'):
+        os.makedirs('history')
 
     # Fetch traffic data from API
     traffic_data = []
@@ -82,16 +82,9 @@ def main(history_dir):
     timestamp = int(time.time())
 
     # save data to json file
-    with open(f"{history_dir or 'history'}/{date}-{hour}.json", "w") as outfile:
+    with open(f"history/{date}-{hour}.json", "w") as outfile:
         write = {"trafficflow": sum_score, "timestamp": timestamp, "paths": len(paths)}
         json.dump(write, outfile, indent=4)
 
 if __name__ == "__main__":
-    # Get an optional path under which the data should be saved
-    import sys
-    if len(sys.argv) > 1:
-        history_dir = sys.argv[1]
-    else:
-        history_dir = None
-
-    main(history_dir)
+    main()
