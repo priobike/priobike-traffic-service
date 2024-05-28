@@ -13,8 +13,8 @@ def main():
     api_link = f"https://api.hamburg.de/datasets/v1/verkehrslage/collections/verkehrslage/items?&f=json&limit=100&offset=0"
 
     # Create folder for data if it doesn't exist
-    if not os.path.exists('history'):
-        os.makedirs('history')
+    if not os.path.exists('/app/history'):
+        os.makedirs('/app/history')
 
     # Fetch traffic data from API
     traffic_data = []
@@ -82,7 +82,7 @@ def main():
     timestamp = int(time.time())
 
     # save data to json file
-    with open(f"history/{date}-{hour}.json", "w") as outfile:
+    with open(f"/app/history/{date}-{hour}.json", "w") as outfile:
         write = {"trafficflow": sum_score, "timestamp": timestamp, "paths": len(paths)}
         json.dump(write, outfile, indent=4)
 

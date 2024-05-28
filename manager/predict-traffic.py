@@ -24,7 +24,7 @@ def main(prediction_path):
     global date_now, weekday_now
 
     # Get files in the history folder
-    files = os.listdir("history")
+    files = os.listdir("/app/history")
     files = [file for file in files if file.endswith(".json")]
     key = lambda x: int(time.mktime(time.strptime(x, "%d.%m.%Y-%H:%M.json")))
     files.sort(key=key, reverse=True)
@@ -66,7 +66,7 @@ def main(prediction_path):
         prediction.update({"quality_" + str(hour_to_check): None})
 
     # Get the current score by reading the first file (which is the newest one, because the list is sorted)
-    with open(f"history/{files[0]}", "r") as file:
+    with open(f"/app/history/{files[0]}", "r") as file:
         data = json.load(file)
         score_now = data["trafficflow"]
         prediction.update({"now": score_now})
@@ -90,7 +90,7 @@ def prune_old_files(files):
 
         # Delete files old files
         if timestamp < time_oldest:
-            os.remove(f"history/{filename}")
+            os.remove(f"/app/history/{filename}")
             removed.append(filename)
 
     for filename in removed:
@@ -114,7 +114,7 @@ def use_same_day(check_hour, files):
 
         # If we have data for the given hour and same day of the week
         if data_hour == check_hour and data_day == weekday_now and data_date != date_now:
-            with open(f"history/{filename}", "r") as file:
+            with open(f"/app/history/{filename}", "r") as file:
                 data = json.load(file)
                 score = data["trafficflow"]
                 scores.append(score)
@@ -142,7 +142,7 @@ def use_weekday_or_weekend(check_hour, files):
         if weekday_now <= 5:
             # workweek
             if data_hour == check_hour and data_day <= 5:
-                with open(f"history/{filename}",
+                with open(f"/app/history/{filename}",
                           "r") as file:
                     data = json.load(file)
                     score = data["trafficflow"]
@@ -151,7 +151,7 @@ def use_weekday_or_weekend(check_hour, files):
         else:
             # weekend
             if data_hour == check_hour and data_day > 5:
-                with open(f"history/{filename}",
+                with open(f"/app/history/{filename}",
                           "r") as file:
                     data = json.load(file)
                     score = data["trafficflow"]
@@ -176,7 +176,7 @@ def use_same_hour(check_hour, files):
 
         # If there is not enough data, get the average score for the given hour
         if data_hour == check_hour:
-            with open(f"history/{filename}", "r") as file:
+            with open(f"/app/history/{filename}", "r") as file:
                 data = json.load(file)
                 score = data["trafficflow"]
                 scores.append(score)
