@@ -2,7 +2,7 @@
 
 # priobike-traffic-service
 
-This repo contains a service that predicts the traffic for hamburg by regularly fetching data from the ["Verkehrslage Hamburg"](https://api.hamburg.de/datasets/v1/verkehrslage) API. Prediction are created by calculating the average value for each hour of the day if possible. Historical data is strored up to 6 weeks.
+This repo contains a service that predicts the traffic for hamburg by regularly fetching data from the ["Verkehrslage Hamburg"](https://api.hamburg.de/datasets/v1/verkehrslage) API. Predictions are created by calculating the average value for each hour of the day if possible. Historical data is strored up to 6 weeks.
 
 [Learn more about PrioBike](https://github.com/priobike)
 
